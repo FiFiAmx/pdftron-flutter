@@ -1,0 +1,45 @@
+group 'com.pdftron.pdftronflutter'
+version '3.0.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.0.2'
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://pdftron-maven.s3.amazonaws.com/release"
+        }
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.pdftron.pdftronflutter'
+
+    compileSdk 35
+
+    defaultConfig {
+        minSdk = 21
+        vectorDrawables.useSupportLibrary = true
+    }
+    lintOptions {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    // Apryse SDK dependencies
+    implementation "com.pdftron:pdftron:11.8.0"
+    implementation "com.pdftron:tools:11.8.0"
+}
