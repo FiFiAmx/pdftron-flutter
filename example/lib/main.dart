@@ -1,14 +1,17 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:pdftron_flutter/pdftron_flutter.dart';
+import 'package:file_picker/file_picker.dart'; // 务必确保 pubspec.yaml 引入了此包
+
 // If you are using local files, add the permission_handler
 // dependency to pubspec.yaml and uncomment the line below.
 // import 'package:permission_handler/permission_handler.dart';
 
-//set this value to view document via Widget
+// set this value to view document via Widget
 var enableWidget = true;
 
 void main() => runApp(MyApp());
@@ -159,11 +162,144 @@ class _ViewerState extends State<Viewer> {
 
     var path = await PdftronFlutter.saveDocument();
     print("flutter save: $path");
+  }
 
-    // To cancel event:
-    // annotCancel();
-    // bookmarkCancel();
-    // documentLoadedCancel();
+  /// ========================================================================
+  /// ⬇️ 这里开始是新增的转换功能测试代码
+  /// ========================================================================
+
+  /// 1. 选择 PDF 并转为 Word
+  Future<void> _pickAndConvertPdfToWord() async {
+    print("📂 正在打开文件选择器 (PDF)...");
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+    );
+
+    if (result != null) {
+      String inputPath = result.files.single.path!;
+      String fileName = inputPath.split('/').last;
+      // ⚠️ 修改路径到 Download 文件夹
+      // String outputPath = "/storage/emulated/0/Download/${fileName}_converted.docx";
+      String outputPath = "$inputPath${fileName}_converted.docx";
+
+      _showLoading("正在转换 PDF -> Word...");
+
+      try {
+        await PdftronFlutter.convertPdfToWord(inputPath, outputPath);
+        _showResult("✅ 成功", "文件已保存至:\n$outputPath");
+
+        final result = await OpenFilex.open(outputPath);
+        print("打开结果: ${result.type}");
+      } catch (e) {
+        // 如果是权限问题或 License 问题，会在这里捕获
+        _showResult("❌ 失败", e.toString());
+      }
+    }
+  }
+
+  /// 2. 选择 Office (Word/PPT/Excel) 并转为 PDF
+  Future<void> _pickAndConvertOfficeToPdf() async {
+    print("📂 正在打开文件选择器 (Office)...");
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['docx', 'doc', 'xlsx', 'ppt', 'pptx'],
+    );
+
+    if (result != null) {
+      String inputPath = result.files.single.path!;
+      // 获取文件名
+      String fileName = inputPath.split('/').last;
+      // ⚠️ 修改路径到 Download 文件夹
+      // String outputPath = "/storage/emulated/0/Download/${fileName}_converted.pdf";
+      String outputPath = "$inputPath${fileName}_converted.pdf";
+
+      _showLoading("正在转换 Office -> PDF...");
+
+      try {
+        await PdftronFlutter.convertOfficeToPdf(inputPath, outputPath);
+        _showResult("✅ 成功", "文件已保存至:\n$outputPath");
+
+        final result = await OpenFilex.open(outputPath);
+        print("打开结果: ${result.type}");
+      } catch (e) {
+        _showResult("❌ 失败", e.toString());
+      }
+    }
+  }
+
+  /// 3. 选择多张图片 并转为 PDF
+  Future<void> _pickAndConvertImagesToPdf() async {
+    print("📂 正在打开文件选择器 (Images)...");
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+    );
+
+    if (result != null) {
+      List<String> imagePaths = result.paths.map((path) => path!).toList();
+      if (imagePaths.isEmpty) return;
+
+      String dir = File(imagePaths.first).parent.path;
+      String fileName = dir.split('/').last;
+      // ⚠️ 修改路径到 Download 文件夹
+      // String outputPath = "/storage/emulated/0/Download/${fileName}_converted.pdf";
+      String outputPath = "$dir${fileName}_converted.pdf";
+
+      _showLoading("正在合并 ${imagePaths.length} 张图片 -> PDF...");
+
+      try {
+        await PdftronFlutter.convertImagesToPdf(imagePaths, outputPath);
+        _showResult("✅ 成功", "PDF 已保存至:\n$outputPath");
+
+        final result = await OpenFilex.open(outputPath);
+        print("打开结果: ${result.type}");
+      } catch (e) {
+        _showResult("❌ 失败", e.toString());
+      }
+    }
+  }
+
+  // 显示 Loading 弹窗
+  void _showLoading(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => Center(
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.circular(10)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 15),
+              Text(message, style: TextStyle(decoration: TextDecoration.none, color: Colors.black, fontSize: 14))
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 显示结果弹窗
+  void _showResult(String title, String content) {
+    // 尝试关闭 Loading 弹窗
+    if (Navigator.canPop(context)) {
+      Navigator.of(context).pop();
+    }
+
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: Text("好"))
+        ],
+      ),
+    );
   }
 
   @override
@@ -180,17 +316,76 @@ class _ViewerState extends State<Viewer> {
       );
       documentChild = _showViewer
           ? SafeArea(
-              child: DocumentView(
-              onCreated: _onDocumentViewCreated,
-            ))
+          child: DocumentView(
+            onCreated: _onDocumentViewCreated,
+          ))
           : Container();
     }
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: documentChild,
+      appBar: AppBar(
+        title: Text("PDFTron 转换功能测试"),
+        actions: [
+          IconButton(icon: Icon(Icons.refresh), onPressed: (){
+            setState(() {});
+          })
+        ],
+      ),
+      // 使用 Stack 将测试按钮悬浮在 Viewer 上方
+      body: Stack(
+        children: [
+          // 底层：文档查看器
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            child: documentChild,
+          ),
+
+          // 上层：测试控制面板
+          Positioned(
+            bottom: 20,
+            left: 10,
+            right: 10,
+            child: Card(
+              elevation: 8,
+              color: Colors.white.withOpacity(0.95),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("功能测试区 (点击按钮选择文件)", style: TextStyle(fontWeight: FontWeight.bold)),
+                    Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildTestBtn("PDF转Word", Icons.file_copy, Colors.orange, _pickAndConvertPdfToWord),
+                        _buildTestBtn("Office转PDF", Icons.picture_as_pdf, Colors.red, _pickAndConvertOfficeToPdf),
+                        _buildTestBtn("多图转PDF", Icons.image, Colors.green, _pickAndConvertImagesToPdf),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 简单的按钮构建器
+  Widget _buildTestBtn(String text, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 32),
+          SizedBox(height: 4),
+          Text(text, style: TextStyle(fontSize: 12)),
+        ],
       ),
     );
   }

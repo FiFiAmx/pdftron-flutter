@@ -5,6 +5,7 @@ import android.content.Context;
 import com.pdftron.common.PDFNetException;
 import com.pdftron.pdf.PDFNet;
 import com.pdftron.pdftronflutter.FlutterDocumentActivity;
+import java.util.List;
 
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
@@ -12,6 +13,9 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.CONVERT_IMAGES_TO_PDF;
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.CONVERT_OFFICE_TO_PDF;
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.CONVERT_PDF_TO_WORD;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_APP_BAR_BUTTON_PRESSED;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_SCROLL_CHANGED;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.FUNCTION_GET_PLATFORM_VERSION;
@@ -42,6 +46,10 @@ import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_PAGE_CHANGED;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_PAGE_MOVED;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_ANNOTATION_TOOLBAR_ITEM_PRESSED;
 import static com.pdftron.pdftronflutter.helpers.PluginUtils.EVENT_ZOOM_CHANGED;
+
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.handleImagesToPdf;
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.handleOfficeToPdf;
+import static com.pdftron.pdftronflutter.helpers.PluginUtils.handlePdfToWord;
 
 public class PluginMethodCallHandler implements MethodCallHandler {
 
@@ -314,6 +322,24 @@ public class PluginMethodCallHandler implements MethodCallHandler {
             case FUNCTION_SET_REQUESTED_ORIENTATION: {
                 int requestedOrientation = call.argument(KEY_REQUESTED_ORIENTATION);
                 FlutterDocumentActivity.setOrientation(requestedOrientation);
+                break;
+            }
+            case CONVERT_PDF_TO_WORD: {
+                String pdfPath = call.argument("pdfPath");
+                String outputPath = call.argument("outputPath");
+                handlePdfToWord(pdfPath, outputPath, result);
+                break;
+            }
+            case CONVERT_OFFICE_TO_PDF: {
+                String officePath = call.argument("officePath");
+                String outputPath = call.argument("outputPath");
+                handleOfficeToPdf(officePath, outputPath, result);
+                break;
+            }
+            case CONVERT_IMAGES_TO_PDF: {
+                List<String> imagePaths = call.argument("imagePaths");
+                String outputPath = call.argument("outputPath");
+                handleImagesToPdf(imagePaths, outputPath, result);
                 break;
             }
             default:

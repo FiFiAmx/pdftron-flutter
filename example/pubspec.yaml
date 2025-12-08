@@ -12,6 +12,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  file_picker: ^8.0.0+1 #文件选择
+  open_filex: ^4.7.0 #打开文件
+
   pdftron_flutter:
     path: ../
 
