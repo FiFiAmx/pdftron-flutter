@@ -467,7 +467,6 @@ static NSString * const PTScrollVerticalKey = @"vertical";
 // Convert
 static NSString * const ConvertPdfToWord = @"convertPdfToWord";
 static NSString * const ConvertOfficeToPdf = @"convertOfficeToPdf";
-static NSString * const ConvertImagesToPdf = @"convertImagesToPdf";
 
 // RGB colors
 static NSString * const PTColorRedKey = @"red";

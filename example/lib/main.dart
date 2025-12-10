@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -228,38 +227,6 @@ class _ViewerState extends State<Viewer> {
     }
   }
 
-  /// 3. 选择多张图片 并转为 PDF
-  Future<void> _pickAndConvertImagesToPdf() async {
-    print("📂 正在打开文件选择器 (Images)...");
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.image,
-    );
-
-    if (result != null) {
-      List<String> imagePaths = result.paths.map((path) => path!).toList();
-      if (imagePaths.isEmpty) return;
-
-      String dir = File(imagePaths.first).parent.path;
-      String fileName = dir.split('/').last;
-      // ⚠️ 修改路径到 Download 文件夹
-      // String outputPath = "/storage/emulated/0/Download/${fileName}_converted.pdf";
-      String outputPath = "$dir${fileName}_converted.pdf";
-
-      _showLoading("正在合并 ${imagePaths.length} 张图片 -> PDF...");
-
-      try {
-        await PdftronFlutter.convertImagesToPdf(imagePaths, outputPath);
-        _showResult("✅ 成功", "PDF 已保存至:\n$outputPath");
-
-        final result = await OpenFilex.open(outputPath);
-        print("打开结果: ${result.type}");
-      } catch (e) {
-        _showResult("❌ 失败", e.toString());
-      }
-    }
-  }
-
   // 显示 Loading 弹窗
   void _showLoading(String message) {
     showDialog(
@@ -362,7 +329,6 @@ class _ViewerState extends State<Viewer> {
                       children: [
                         _buildTestBtn("PDF转Word", Icons.file_copy, Colors.orange, _pickAndConvertPdfToWord),
                         _buildTestBtn("Office转PDF", Icons.picture_as_pdf, Colors.red, _pickAndConvertOfficeToPdf),
-                        _buildTestBtn("多图转PDF", Icons.image, Colors.green, _pickAndConvertImagesToPdf),
                       ],
                     ),
                   ],

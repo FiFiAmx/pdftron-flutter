@@ -631,7 +631,6 @@ public class PluginUtils {
 
     public static final String CONVERT_PDF_TO_WORD = "convertPdfToWord";
     public static final String CONVERT_OFFICE_TO_PDF = "convertOfficeToPdf";
-    public static final String CONVERT_IMAGES_TO_PDF = "convertImagesToPdf";
 
     public static class ConfigInfo {
         private int initialPageNumber;
@@ -4704,58 +4703,6 @@ public class PluginUtils {
                 if (pdfDoc != null) {
                     try { pdfDoc.close(); } catch (Exception ignored) {}
                 }
-            }
-        }).start();
-    }
-
-    // --- 3. 多图转 PDF (Scan To PDF 逻辑) ---
-    public static void handleImagesToPdf(List<String> imagePaths, String outputPath, final MethodChannel.Result result) {
-        new Thread(() -> {
-            PDFDoc doc = null;
-            ElementBuilder builder = null;
-            ElementWriter writer = null;
-            try {
-                doc = new PDFDoc();
-                builder = new ElementBuilder();
-                writer = new ElementWriter();
-
-                for (String imagePath : imagePaths) {
-                    // 1. 创建一个空白页
-                    Page page = doc.pageCreate();
-                    writer.begin(page);
-
-                    // 2. 加载图片
-                    Image img = Image.create(doc.getSDFDoc(), imagePath);
-
-                    // 3. 设置图片尺寸适配页面 (这里默认设为图片原尺寸，也可以缩放)
-                    double w = img.getImageWidth();
-                    double h = img.getImageHeight();
-
-                    // 4. 将图片绘制到 PDF 页面上
-                    // Matrix2D(缩放X, 倾斜X, 倾斜Y, 缩放Y, 位移X, 位移Y)
-                    // 下面这行代码让图片保持比例铺满页面或按原图大小放置
-                    // 为了简单，我们把页面设为图片大小
-                    page.setMediaBox(new com.pdftron.pdf.Rect(0, 0, w, h));
-                    writer.writePlacedElement(builder.createImage(img, new Matrix2D(w, 0, 0, h, 0, 0)));
-
-                    writer.end();
-                    doc.pagePushBack(page);
-                }
-
-                // 保存文件
-                doc.save(outputPath, SDFDoc.SaveMode.LINEARIZED, null);
-
-                new Handler(Looper.getMainLooper()).post(() -> result.success(null));
-            } catch (Exception e) {
-                e.printStackTrace();
-                new Handler(Looper.getMainLooper()).post(() ->
-                        result.error("CONVERT_ERROR", "Images to PDF failed: " + e.getMessage(), null));
-            } finally {
-                try {
-                    if (writer != null) writer.destroy();
-                    if (builder != null) builder.destroy();
-                    if (doc != null) doc.close();
-                } catch (Exception ignored) {}
             }
         }).start();
     }

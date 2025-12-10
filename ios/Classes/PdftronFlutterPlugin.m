@@ -1723,11 +1723,6 @@
         NSString *outputPath = call.arguments[@"outputPath"];
         [self handleOfficeToPdf:officePath outputPath:outputPath result:result];
     }
-    else if ([call.method isEqualToString:ConvertImagesToPdf]) {
-        NSArray<NSString *> *imagePaths = call.arguments[@"imagePaths"];
-        NSString *outputPath = call.arguments[@"outputPath"];
-        [self handleImagesToPdf:imagePaths outputPath:outputPath result:result];
-    }
     else {
         result(FlutterMethodNotImplemented);
     }
@@ -3762,64 +3757,6 @@
         }
         // iOS 的 ARC 机制会自动处理大部分内存释放，但显式关闭文档是个好习惯
         /* if (doc) [doc Close]; */
-    });
-}
-
-// --- 3. 多图转 PDF (Images to PDF) 实现 ---
-- (void)handleImagesToPdf:(NSArray<NSString *> *)imagePaths outputPath:(NSString *)outputPath result:(FlutterResult)result {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        PTPDFDoc *doc = nil;
-        PTElementBuilder *builder = nil;
-        PTElementWriter *writer = nil;
-        
-        @try {
-            doc = [[PTPDFDoc alloc] init];
-            builder = [[PTElementBuilder alloc] init];
-            writer = [[PTElementWriter alloc] init];
-            
-            for (NSString *imagePath in imagePaths) {
-                // 1. 创建页面 (修正：必须使用 alloc init)
-                PTPDFRect *pageRect = [[PTPDFRect alloc] initWithX1:0 y1:0 x2:612 y2:792];
-                PTPage *page = [doc PageCreate:pageRect];
-                
-                [writer WriterBeginWithPage:page placement:e_ptoverlay page_coord_sys:YES compress:YES resources:nil];
-                
-                // 2. 加载图片
-                PTImage *img = [PTImage Create:[doc GetSDFDoc] filename:imagePath];
-                
-                // 3. 获取图片尺寸
-                double w = [img GetImageWidth];
-                double h = [img GetImageHeight];
-                
-                // 4. 设置图片绘制矩阵
-                PTMatrix2D *mtx = [[PTMatrix2D alloc] initWithA:w b:0 c:0 d:h h:0 v:0];
-                PTElement *element = [builder CreateImageWithMatrix:img mtx:mtx];
-                
-                // 5. 写入元素
-                [writer WritePlacedElement:element];
-                [writer End];
-                
-                // 6. 调整页面大小 (修正：必须使用 alloc init)
-                PTPDFRect *mediaBox = [[PTPDFRect alloc] initWithX1:0 y1:0 x2:w y2:h];
-                [page SetMediaBox:mediaBox];
-                
-                [doc PagePushBack:page];
-            }
-            
-            // 保存文件
-            [doc SaveToFile:outputPath flags:e_ptlinearized];
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                result(nil);
-            });
-            
-        } @catch (NSException *exception) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                result([FlutterError errorWithCode:@"CONVERT_ERROR"
-                                           message:[NSString stringWithFormat:@"Images to PDF failed: %@", exception.reason]
-                                           details:nil]);
-            });
-        }
     });
 }
 
