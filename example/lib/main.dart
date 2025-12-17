@@ -32,6 +32,7 @@ class _ViewerState extends State<Viewer> {
   String _document =
       "https://pdftron.s3.amazonaws.com/downloads/pl/PDFTRON_mobile_about.pdf";
   bool _showViewer = true;
+  DocumentViewController? _controller;
 
   @override
   void initState() {
@@ -180,9 +181,24 @@ class _ViewerState extends State<Viewer> {
       );
       documentChild = _showViewer
           ? SafeArea(
-              child: DocumentView(
-              onCreated: _onDocumentViewCreated,
-            ))
+              child: Column(
+                children: [
+                  ElevatedButton(onPressed: () async {
+                    await _controller?.openStylePanel();
+                  }, child: Text('open style panel')),
+                  ElevatedButton(onPressed: () async {
+                    await _controller?.openSignaturePanel();
+                  }, child: Text('open signature panel')),
+                  ElevatedButton(onPressed: () async {
+                    final currentTool = await _controller?.getToolMode();
+                    print("get tool mode: $currentTool");
+                  }, child: Text('get tool mode')),
+                  Expanded(
+                    child: DocumentView(
+                    onCreated: _onDocumentViewCreated,),
+                  ),
+                ],
+              ))
           : Container();
     }
 
@@ -200,7 +216,8 @@ class _ViewerState extends State<Viewer> {
   // Function(DocumentViewController controller) being passed to it.
   void _onDocumentViewCreated(DocumentViewController controller) async {
     Config config = new Config();
-
+    config.hideTopToolbars = true;
+    config.hideBottomToolbar = true;
     var leadingNavCancel = startLeadingNavButtonPressedListener(() {
       // Uncomment this to quit viewer when leading navigation button is pressed:
       // this.setState(() {
@@ -209,6 +226,27 @@ class _ViewerState extends State<Viewer> {
 
       // Show a dialog when leading navigation button is pressed.
       _showMyDialog();
+    });
+
+    _controller = controller;
+    startAnnotationChangedListener((action, annotations) async {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        await Future.delayed(const Duration(milliseconds: 100));
+        final toolMode = await controller.getToolMode();
+        print("flutter annotation action: ${toolMode}");
+        if (toolMode == Tools.pan) {
+          print("改变");
+          print("重新设置为自由文本");
+          controller.setToolMode(Tools.annotationCreateFreeText);
+          final toolMode = await controller.getToolMode();
+          print("重新设置为自由文本成功: ${toolMode}");
+      }});
+
+      print("flutter annotation action: ${action}");
+      for (Annot annot in annotations) {
+        print("annotation has id: ${annot.id}");
+        print("annotation is in page: ${annot.pageNumber}");
+      }
     });
 
     await controller.openDocument(_document, config: config);

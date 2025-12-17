@@ -1,5 +1,9 @@
 package com.pdftron.pdftronflutter.helpers;
 
+import com.pdftron.pdf.controls.AnnotStyleDialogFragment;
+import com.pdftron.pdf.dialog.signature.SignatureDialogFragmentBuilder;
+import com.pdftron.pdf.model.AnnotStyle;
+import com.pdftron.pdf.tools.ToolManager;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Color;
@@ -13,6 +17,7 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentManager;
 
 import com.pdftron.common.PDFNetException;
 import com.pdftron.fdf.FDFDoc;
@@ -282,7 +287,9 @@ public class PluginUtils {
     public static final String EVENT_SCROLL_CHANGED = "scroll_changed_event";
     // Hygen Generated Event Listeners
     public static final String EVENT_APP_BAR_BUTTON_PRESSED = "app_bar_button_pressed_event";
-
+    public static final String FUNCTION_OPEN_STYLE_PANEL = "openStylePanel";
+    public static final String FUNCTION_OPEN_SIGNATURE_PANEL = "openSignaturePanel";
+    public static final String FUNCTION_GET_TOOL_MODE = "getToolMode";
     public static final String FUNCTION_GET_PLATFORM_VERSION = "getPlatformVersion";
     public static final String FUNCTION_GET_VERSION = "getVersion";
     public static final String FUNCTION_INITIALIZE = "initialize";
@@ -2177,6 +2184,21 @@ public class PluginUtils {
 
     public static void onMethodCall(MethodCall call, MethodChannel.Result result, ViewerComponent component) {
         switch (call.method) {
+            case FUNCTION_OPEN_STYLE_PANEL: {
+                checkFunctionPrecondition(component);
+                showAnnotStyleDialogFragment(result, component);
+                break;
+            }
+            case FUNCTION_OPEN_SIGNATURE_PANEL: {
+                checkFunctionPrecondition(component);
+                showSignatureDialogFragment(result, component);
+                break;
+            }
+            case FUNCTION_GET_TOOL_MODE: {
+                checkFunctionPrecondition(component);
+                getToolMode(result, component);
+                break;
+            }
             case FUNCTION_IMPORT_ANNOTATIONS: {
                 checkFunctionPrecondition(component);
                 String xfdf = call.argument(KEY_XFDF);
@@ -2871,6 +2893,98 @@ public class PluginUtils {
                 pdfViewCtrl.docUnlock();
             }
         }
+    }
+
+    ///  TODO
+    /// 显示注释样式对话框
+    private static void showAnnotStyleDialogFragment(MethodChannel.Result result, ViewerComponent component) {
+        final PdfViewCtrlTabFragment2 pdfViewCtrlTabFragment = component.getPdfViewCtrlTabFragment();
+        PDFViewCtrl pdfViewCtrl = component.getPdfViewCtrl();
+        PDFDoc pdfDoc = component.getPdfDoc();
+        ToolManager toolManager = component.getToolManager();
+
+        if (null == pdfViewCtrlTabFragment) {
+            result.error("InvalidState", "PdfViewCtrlTabFragment not found", null);
+            return;
+        }
+
+        if (null == pdfViewCtrl || null == pdfDoc) {
+            result.error("InvalidState", "Activity not attached", null);
+            return;
+        }
+
+        if (toolManager == null) {
+            result.error("InvalidState", "Tool manager not found", null);
+            return;
+        }
+
+        int toolMode = toolManager.getTool().getToolMode().getValue();
+
+        System.out.println("currentToolMode：" + toolMode);
+
+        // 1. Instantiate an AnnotStyle with its constructor
+        AnnotStyle annotStyle = new AnnotStyle();
+        // 2. Set annotation type to annot style
+        annotStyle.setAnnotType(toolMode);
+        // 3. Set blue stroke, yellow fill color, thickness 5, opacity 0.8 to the annotation style.
+        annotStyle.setStyle(Color.BLUE, Color.YELLOW, 5f, 0.8f);
+        // 4. Instantiate an AnnotStyleDialogFragment.Builder with its constructor
+        AnnotStyleDialogFragment.Builder styleDialogBuilder = new AnnotStyleDialogFragment.Builder(annotStyle);
+        // 5. Set anchor view if you want the `AnnotStyleDialogFragment` be displayed as a popup window in tablet mode
+        // styleDialogBuilder.setAnchorView(myButton);
+        // 6. Build AnnotStyleDialogFragment with the arguments supplied to this builder.
+        AnnotStyleDialogFragment annotStyleDialog = styleDialogBuilder.build();
+        annotStyleDialog.show(pdfViewCtrlTabFragment.getChildFragmentManager(), "annot_style_dialog");
+        result.success(null);
+    }
+
+    ///  TODO
+    /// 显示签名面板
+    private static void showSignatureDialogFragment(MethodChannel.Result result, ViewerComponent component) {
+        final PdfViewCtrlTabFragment2 pdfViewCtrlTabFragment = component.getPdfViewCtrlTabFragment();
+        PDFViewCtrl pdfViewCtrl = component.getPdfViewCtrl();
+        PDFDoc pdfDoc = component.getPdfDoc();
+
+        if (null == pdfViewCtrlTabFragment) {
+            result.error("InvalidState", "PdfViewCtrlTabFragment not found", null);
+            return;
+        }
+
+        if (null == pdfViewCtrl || null == pdfDoc) {
+            result.error("InvalidState", "Activity not attached", null);
+            return;
+        }
+
+        // 1. Instantiate the fragment directly
+        SignatureDialogFragment signatureDialog = new SignatureDialogFragment();
+
+        // 2. Show the dialog
+        // "getSupportFragmentManager()" is a method of your Activity (AppCompatActivity)
+        // "SignatureDialogFragment.TAG" is a standard tag, or you can use "signature_dialog"
+        signatureDialog.show(pdfViewCtrlTabFragment.getChildFragmentManager(), SignatureDialogFragment.TAG);
+
+        result.success(null);
+    }
+
+    ///  TODO
+    /// 获取当前工具模式
+    private static void getToolMode(MethodChannel.Result result, ViewerComponent component) {
+        PDFViewCtrl pdfViewCtrl = component.getPdfViewCtrl();
+        PDFDoc pdfDoc = component.getPdfDoc();
+        ToolManager toolManager = component.getToolManager();
+
+        if (null == pdfViewCtrl || null == pdfDoc) {
+            result.error("InvalidState", "Activity not attached", null);
+            return;
+        }
+
+        if (null == toolManager) {
+            result.error("InvalidState", "Tool manager not found", null);
+            return;
+        }
+
+        int toolMode = toolManager.getTool().getToolMode().getValue();
+        result.success(toolMode);
     }
 
     private static void importAnnotations(String xfdf, boolean replace, MethodChannel.Result result, ViewerComponent component) throws PDFNetException {

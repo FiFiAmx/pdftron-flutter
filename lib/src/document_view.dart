@@ -71,6 +71,52 @@ class DocumentViewController {
 
   final MethodChannel _channel;
 
+  /// 打开样式面板
+  Future<void> openStylePanel() {
+    return _channel.invokeMethod(Functions.openStylePanel);
+  }
+
+  /// 打开签名面板
+  Future<void> openSignaturePanel() {
+    return _channel.invokeMethod(Functions.openSignaturePanel);
+  }
+
+  /// 获取当前工具模式
+  /// 调用 Android 平台代码，获取当前的 ToolMode 整数 ID，
+  /// 然后将该 ID 映射回 Tools 类中定义的对应字符串常量。
+  Future<String?> getToolMode() async {
+    try {
+      // 假设 _channel 是您的 MethodChannel 实例，Functions.getToolMode 是方法名常量
+      final int? toolModeId = await _channel.invokeMethod(Functions.getToolMode);
+
+      if (toolModeId == null) {
+        // 平台返回空值
+        return null;
+      }
+
+      // 使用 Tools 类中的映射方法进行转换
+      final String? toolName = Tools.getNameFromId(toolModeId);
+
+      if (toolName == null) {
+        // 找不到 ID 对应的工具名，返回一个默认值 (如 pan) 或 null
+        print('Warning: Tool ID $toolModeId not found in Dart Tools map. Defaulting to Pan.');
+        return Tools.pan; // 假设 pan 是安全的默认值
+      }
+
+      // 返回对应的工具名称字符串
+      return toolName;
+
+    } on PlatformException catch (e) {
+      // 捕获 MethodChannel 异常
+      print("Error getting tool mode from platform: ${e.message}");
+      return null;
+    } catch (e) {
+      // 捕获其他异常
+      print("An unknown error occurred while getting tool mode: $e");
+      return null;
+    }
+  }
+
   /// Opens a document in the viewer with configurations.
   ///
   /// Uses the path specified by [document]. Takes a [password] for

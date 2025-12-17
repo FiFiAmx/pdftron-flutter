@@ -1,6 +1,14 @@
 
 /// Names of functions.
 class Functions {
+  /// flutter编辑相关
+  /// 打开样式面板
+  static const openStylePanel = "openStylePanel";
+  /// 打开签名面板
+  static const openSignaturePanel = "openSignaturePanel";
+  /// 获取工具模式
+  static const getToolMode = "getToolMode";
+
   static const getPlatformVersion = "getPlatformVersion";
   static const getVersion = "getVersion";
   static const initialize = "initialize";
@@ -250,6 +258,84 @@ class Tools {
 
   /// Android only.
   static const annotationLasso = 'AnnotationLasso';
+
+  // ==========================================================
+  // 1. 静态映射表：将 Java/Android 端的整数 ID 映射到 Dart 的字符串常量
+  // ==========================================================
+  // Key: ToolManager.ToolMode 的整数值 (getValue())
+  // Value: 对应的 Tools 类中的字符串常量值
+  static const Map<int, String> _toolModeMap = {
+    // 基础操作
+    1: Tools.pan, // PAN(1) -> "Pan"
+    10: Tools.textSelect, // TEXT_SELECT(10) -> "TextSelect"
+
+    // 批注编辑/选择 (根据 Java 逻辑)
+    37: Tools.annotationEdit, // ANNOT_EDIT_RECT_GROUP(37) -> "AnnotationEdit" (用于矩形组编辑和Lasso)
+
+    // 文本标记
+    7: Tools.annotationCreateFreeHand, // INK_CREATE(7) -> "AnnotationCreateFreeHand"
+    17: Tools.annotationCreateTextHighlight, // TEXT_HIGHLIGHT(17) -> "AnnotationCreateTextHighlight"
+    16: Tools.annotationCreateTextUnderline, // TEXT_UNDERLINE(16) -> "AnnotationCreateTextUnderline"
+    18: Tools.annotationCreateTextSquiggly, // TEXT_SQUIGGLY(18) -> "AnnotationCreateTextSquiggly"
+    19: Tools.annotationCreateTextStrikeout, // TEXT_STRIKEOUT(19) -> "AnnotationCreateTextStrikeout"
+    33: Tools.annotationCreateFreeHighlighter, // FREE_HIGHLIGHTER(33) -> "AnnotationCreateFreeHighlighter"
+
+    // 几何形状
+    5: Tools.annotationCreateRectangle, // RECT_CREATE(5) -> "AnnotationCreateRectangle"
+    6: Tools.annotationCreateEllipse, // OVAL_CREATE(6) -> "AnnotationCreateEllipse"
+    3: Tools.annotationCreateLine, // LINE_CREATE(3) -> "AnnotationCreateLine"
+    4: Tools.annotationCreateArrow, // ARROW_CREATE(4) -> "AnnotationCreateArrow"
+    34: Tools.annotationCreatePolyline, // POLYLINE_CREATE(34) -> "AnnotationCreatePolyline"
+    35: Tools.annotationCreatePolygon, // POLYGON_CREATE(35) -> "AnnotationCreatePolygon"
+    36: Tools.annotationCreatePolygonCloud, // CLOUD_CREATE(36) -> "AnnotationCreatePolygonCloud"
+
+    // 测量工具
+    39: Tools.annotationCreateDistanceMeasurement, // RULER_CREATE(39) -> "AnnotationCreateDistanceMeasurement"
+    44: Tools.annotationCreatePerimeterMeasurement, // PERIMETER_MEASURE_CREATE(44) -> "AnnotationCreatePerimeterMeasurement"
+    50: Tools.annotationCreateRectangleAreaMeasurement, // RECT_AREA_MEASURE_CREATE(50) -> "AnnotationCreateRectangleAreaMeasurement"
+    45: Tools.annotationCreateAreaMeasurement, // AREA_MEASURE_CREATE(45) -> "AnnotationCreateAreaMeasurement"
+
+    // 其他批注
+    23: Tools.annotationCreateSignature, // SIGNATURE(23) -> "AnnotationCreateSignature"
+    12: Tools.annotationCreateFreeText, // TEXT_CREATE(12) -> "AnnotationCreateFreeText"
+    8: Tools.annotationCreateSticky, // TEXT_ANNOT_CREATE(8) -> "AnnotationCreateSticky"
+    40: Tools.annotationCreateCallout, // CALLOUT_CREATE(40) -> "AnnotationCreateCallout"
+    24: Tools.annotationCreateStamp, // STAMPER(24) -> "AnnotationCreateStamp"
+    25: Tools.annotationCreateRubberStamp, // RUBBER_STAMPER(25) -> "AnnotationCreateRubberStamp"
+    41: Tools.annotationCreateSound, // SOUND_CREATE(41) -> "AnnotationCreateSound"
+    42: Tools.annotationCreateFileAttachment, // FILE_ATTACHMENT_CREATE(42) -> "AnnotationCreateFileAttachment"
+    20: Tools.eraser, // INK_ERASER(20) -> "Eraser"
+
+    // 密文工具 (Redaction)
+    43: Tools.annotationCreateRedaction, // RECT_REDACTION(43) -> "AnnotationCreateRedaction"
+    32: Tools.annotationCreateRedactionText, // TEXT_REDACTION(32) -> "AnnotationCreateRedactionText"
+
+    // 链接工具
+    26: Tools.annotationCreateLink, // RECT_LINK(26) -> "AnnotationCreateLink"
+    29: Tools.annotationCreateLinkText, // TEXT_LINK_CREATE(29) -> "AnnotationCreateLinkText"
+
+    // 表单创建工具 (Form Creation)
+    28: Tools.formCreateTextField, // FORM_TEXT_FIELD_CREATE(28) -> "FormCreateTextField"
+    30: Tools.formCreateCheckboxField, // FORM_CHECKBOX_CREATE(30) -> "FormCreateCheckboxField"
+    27: Tools.formCreateSignatureField, // FORM_SIGNATURE_CREATE(27) -> "FormCreateSignatureField"
+    31: Tools.formCreateRadioField, // FORM_RADIO_GROUP_CREATE(31) -> "FormCreateRadioField"
+    46: Tools.formCreateComboBoxField, // FORM_COMBO_BOX_CREATE(46) -> "FormCreateComboBoxField"
+    47: Tools.formCreateListBoxField, // FORM_LIST_BOX_CREATE(47) -> "FormCreateListBoxField"
+
+    // 高级/智能工具
+    51: Tools.annotationSmartPen, // SMART_PEN_INK(51) -> "AnnotationSmartPen"
+
+    // Note: 'TOOL_FORM_CREATE_TOOL_BOX_FIELD' (无映射) and 'TOOL_ANNOTATION_LASSO' (映射到 ANNOT_EDIT_RECT_GROUP)
+  };
+
+  // ==========================================================
+  // 2. 静态查找方法
+  // ==========================================================
+  /// 根据 Java/Android 返回的整数 ID 查找对应的工具名称字符串。
+  static String? getNameFromId(int toolId) {
+    // 使用映射表查找对应的字符串，如果找不到则返回 null。
+    return _toolModeMap[toolId];
+  }
 }
 
 /// Fit modes in the viewer.

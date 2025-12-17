@@ -1521,7 +1521,13 @@
 #pragma mark - Functions
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-    if ([call.method isEqualToString:PTGetPlatformVersionKey]) {
+    if ([call.method isEqualToString:PTOpenStylePanelKey]) {
+        [self openStylePanel:result];
+    } else if ([call.method isEqualToString:PTOpenSignaturePanelKey]) {
+        [self openSignaturePanel:result];
+    } else if ([call.method isEqualToString:PTGetToolModeKey]) {
+        [self getToolMode:result];
+    } else if ([call.method isEqualToString:PTGetPlatformVersionKey]) {
         result([@"iOS " stringByAppendingString:[[UIDevice currentDevice] systemVersion]]);
     } else if ([call.method isEqualToString:PTGetVersionKey]) {
         result([@"PDFNet " stringByAppendingFormat:@"%f", [PTPDFNet GetVersion]]);
@@ -1711,6 +1717,54 @@
     else {
         result(FlutterMethodNotImplemented);
     }
+}
+
+///  TODO
+- (void)openStylePanel:(FlutterResult)flutterResult
+{
+    PTDocumentController *documentController = [self getDocumentController];
+    if(documentController.document == Nil)
+    {
+        // something is wrong, no document.
+        NSLog(@"Error: The document view controller has no document.");
+        
+        flutterResult([FlutterError errorWithCode:@"open_style_panel" message:@"Failed to open style panel" details:@"Error: The document view controller has no document."]);
+        return;
+    }
+    
+    flutterResult(nil);
+}
+
+///  TODO
+- (void)openSignaturePanel:(FlutterResult)flutterResult
+{
+    PTDocumentController *documentController = [self getDocumentController];
+    if(documentController.document == Nil)
+    {
+        // something is wrong, no document.
+        NSLog(@"Error: The document view controller has no document.");
+        
+        flutterResult([FlutterError errorWithCode:@"open_signature_panel" message:@"Failed to open signature panel" details:@"Error: The document view controller has no document."]);
+        return;
+    }
+    
+    flutterResult(nil);
+}
+
+///  TODO
+- (void)getToolMode:(FlutterResult)flutterResult
+{
+    PTDocumentController *documentController = [self getDocumentController];
+    if(documentController.document == Nil)
+    {
+        // something is wrong, no document.
+        NSLog(@"Error: The document view controller has no document.");
+        
+        flutterResult([FlutterError errorWithCode:@"get_tool_mode" message:@"Failed to get tool mode" details:@"Error: The document view controller has no document."]);
+        return;
+    }
+    
+    flutterResult([NSNumber numberWithInt:1]);
 }
 
 + (PTAnnot *)findAnnotWithUniqueID:(NSString *)uniqueID onPageNumber:(int)pageNumber documentController:(PTDocumentController *)documentController error:(NSError **)error
