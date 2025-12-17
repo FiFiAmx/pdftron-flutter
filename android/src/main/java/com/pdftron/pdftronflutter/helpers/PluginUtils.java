@@ -8,6 +8,8 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 import android.util.SparseArray;
@@ -19,10 +21,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 
+import com.pdftron.common.Matrix2D;
 import com.pdftron.common.PDFNetException;
 import com.pdftron.fdf.FDFDoc;
 import com.pdftron.pdf.Annot;
+import com.pdftron.pdf.Convert;
+import com.pdftron.pdf.ElementBuilder;
+import com.pdftron.pdf.ElementWriter;
 import com.pdftron.pdf.Field;
+import com.pdftron.pdf.Image;
 import com.pdftron.pdf.PDFDoc;
 import com.pdftron.pdf.PDFViewCtrl;
 import com.pdftron.pdf.Page;
@@ -66,6 +73,7 @@ import com.pdftron.pdf.widget.toolbar.builder.ToolbarButtonType;
 import com.pdftron.pdf.widget.toolbar.component.DefaultToolbars;
 import com.pdftron.pdf.tools.R;
 import com.pdftron.pdf.PDFDraw;
+import com.pdftron.sdf.SDFDoc;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -627,6 +635,9 @@ public class PluginUtils {
 
     private static AnnotManager.EditPermissionMode mAnnotationManagerEditMode = AnnotManager.EditPermissionMode.EDIT_OTHERS;
     private static PDFViewCtrl.AnnotationManagerMode mAnnotationManagerUndoMode = PDFViewCtrl.AnnotationManagerMode.ADMIN_UNDO_OTHERS;
+
+    public static final String CONVERT_PDF_TO_WORD = "convertPdfToWord";
+    public static final String CONVERT_OFFICE_TO_PDF = "convertOfficeToPdf";
 
     public static class ConfigInfo {
         private int initialPageNumber;
@@ -4767,5 +4778,46 @@ public class PluginUtils {
             }
         }
         return null;
+    }
+
+    // --- 1. PDF 转 Word 实现 ---
+    public static void handlePdfToWord(String pdfPath, String outputPath, final MethodChannel.Result result) {
+        new Thread(() -> {
+            try {
+
+                // 调用原生 API
+                Convert.toWord(pdfPath, outputPath);
+
+                new Handler(Looper.getMainLooper()).post(() -> result.success(null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                new Handler(Looper.getMainLooper()).post(() ->
+                        result.error("CONVERT_ERROR", "PDF to Word failed: " + e.getMessage(), null));
+            }
+        }).start();
+    }
+
+    // --- 2. Word (Office) 转 PDF 实现 ---
+    public static void handleOfficeToPdf(String officePath, String outputPath, final MethodChannel.Result result) {
+        new Thread(() -> {
+            PDFDoc pdfDoc = null;
+            try {
+                pdfDoc = new PDFDoc();
+                // 核心方法：OfficeToPdf
+                Convert.officeToPdf(pdfDoc, officePath, null);
+
+                pdfDoc.save(outputPath, SDFDoc.SaveMode.LINEARIZED, null);
+
+                new Handler(Looper.getMainLooper()).post(() -> result.success(null));
+            } catch (Exception e) {
+                e.printStackTrace();
+                new Handler(Looper.getMainLooper()).post(() ->
+                        result.error("CONVERT_ERROR", "Office to PDF failed: " + e.getMessage(), null));
+            } finally {
+                if (pdfDoc != null) {
+                    try { pdfDoc.close(); } catch (Exception ignored) {}
+                }
+            }
+        }).start();
     }
 }

@@ -2,6 +2,8 @@ package com.pdftron.pdftronflutter.views;
 
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.MenuItem;
 import android.view.View;
@@ -11,9 +13,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentManager;
 
+import com.pdftron.common.Matrix2D;
 import com.pdftron.pdf.Annot;
+import com.pdftron.pdf.Convert;
+import com.pdftron.pdf.ElementBuilder;
+import com.pdftron.pdf.ElementWriter;
+import com.pdftron.pdf.Image;
 import com.pdftron.pdf.PDFDoc;
 import com.pdftron.pdf.PDFViewCtrl;
+import com.pdftron.pdf.Page;
 import com.pdftron.pdf.config.PDFViewCtrlConfig;
 import com.pdftron.pdf.config.ToolManagerBuilder;
 import com.pdftron.pdf.config.ViewerBuilder2;
@@ -28,10 +36,12 @@ import com.pdftron.pdftronflutter.helpers.ViewerComponent;
 import com.pdftron.pdftronflutter.helpers.ViewerImpl;
 import com.pdftron.pdftronflutter.nativeviews.FlutterPdfViewCtrlTabFragment;
 import com.pdftron.pdftronflutter.nativeviews.FlutterPdfViewCtrlTabHostFragment;
+import com.pdftron.sdf.SDFDoc;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;

@@ -466,6 +466,10 @@ static NSString * const PTAnnotationToolbarAlignmentEndKey = @"GravityEnd";
 static NSString * const PTScrollHorizontalKey = @"horizontal";
 static NSString * const PTScrollVerticalKey = @"vertical";
 
+// Convert
+static NSString * const ConvertPdfToWord = @"convertPdfToWord";
+static NSString * const ConvertOfficeToPdf = @"convertOfficeToPdf";
+
 // RGB colors
 static NSString * const PTColorRedKey = @"red";
 static NSString * const PTColorGreenKey = @"green";

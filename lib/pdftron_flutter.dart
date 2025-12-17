@@ -782,4 +782,28 @@ class PdftronFlutter {
       return annotList;
     });
   }
+
+  /// PDF 转 Word
+  static Future<void> convertPdfToWord(String pdfPath, String outputPath) async {
+    await _channel.invokeMethod('convertPdfToWord', {
+      'pdfPath': pdfPath,
+      'outputPath': outputPath,
+    });
+  }
+
+  /// Office 转 PDF
+  static Future<void> convertOfficeToPdf(String officePath, String outputPath) async {
+    await _channel.invokeMethod('convertOfficeToPdf', {
+      'officePath': officePath,
+      'outputPath': outputPath,
+    });
+  }
+
+  /// 图片转 PDF
+  static Future<void> convertImagesToPdf(List<String> imagePaths, String outputPath) async {
+    await _channel.invokeMethod('convertImagesToPdf', {
+      'imagePaths': imagePaths,
+      'outputPath': outputPath,
+    });
+  }
 }

@@ -3,6 +3,11 @@
 #import "DocumentViewFactory.h"
 #import "PTNavigationController.h"
 
+#import <PDFNet/PDFNet.h>
+#import <Tools/Tools.h>
+
+#import <Foundation/Foundation.h>
+
 @interface PdftronFlutterPlugin () <PTTabbedDocumentViewControllerDelegate, PTDocumentControllerDelegate>
 
 @property (nonatomic, strong) id config;
@@ -1713,6 +1718,16 @@
     }
     else if ([call.method isEqualToString:PTGetAnnotationsOnPageKey]) {
         [self getAnnotationsOnPage:result call:call];
+    }
+    else if ([call.method isEqualToString:ConvertPdfToWord]) {
+        NSString *pdfPath = call.arguments[@"pdfPath"];
+        NSString *outputPath = call.arguments[@"outputPath"];
+        [self handlePdfToWord:pdfPath outputPath:outputPath result:result];
+    }
+    else if ([call.method isEqualToString:ConvertOfficeToPdf]) {
+        NSString *officePath = call.arguments[@"officePath"];
+        NSString *outputPath = call.arguments[@"outputPath"];
+        [self handleOfficeToPdf:officePath outputPath:outputPath result:result];
     }
     else {
         result(FlutterMethodNotImplemented);
@@ -3749,6 +3764,54 @@
     }
 
     result([PdftronFlutterPlugin PT_idToJSONString:resultArray]);
+}
+
+// --- 1. PDF 转 Word 实现 ---
+- (void)handlePdfToWord:(NSString *)pdfPath outputPath:(NSString *)outputPath result:(FlutterResult)result {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @try {
+            // iOS 原生 API: PTConvert ToWord
+            [PTConvert ToWord:pdfPath out_path:outputPath];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                result(nil);
+            });
+        } @catch (NSException *exception) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                result([FlutterError errorWithCode:@"CONVERT_ERROR"
+                                           message:[NSString stringWithFormat:@"PDF to Word failed: %@", exception.reason]
+                                           details:nil]);
+            });
+        }
+    });
+}
+
+// --- 2. Word (Office) 转 PDF 实现 ---
+- (void)handleOfficeToPdf:(NSString *)officePath outputPath:(NSString *)outputPath result:(FlutterResult)result {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        PTPDFDoc *doc = nil;
+        @try {
+            doc = [[PTPDFDoc alloc] init];
+            
+            // 核心方法：OfficeToPdf
+            [PTConvert OfficeToPDF:doc in_filename:officePath options:nil];
+            
+            // 保存，e_ptlinearized 对应 SaveMode.LINEARIZED
+            [doc SaveToFile:outputPath flags:e_ptlinearized];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                result(nil);
+            });
+        } @catch (NSException *exception) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                result([FlutterError errorWithCode:@"CONVERT_ERROR"
+                                           message:[NSString stringWithFormat:@"Office to PDF failed: %@", exception.reason]
+                                           details:nil]);
+            });
+        }
+        // iOS 的 ARC 机制会自动处理大部分内存释放，但显式关闭文档是个好习惯
+        /* if (doc) [doc Close]; */
+    });
 }
 
 
