@@ -184,6 +184,10 @@ class _ViewerState extends State<Viewer> {
               child: Column(
                 children: [
                   ElevatedButton(onPressed: () async {
+                    await _controller?.setToolMode(Tools.annotationCreateTextHighlight);
+                    print("set tool mode: Highlight");
+                  }, child: Text('set tool mode')),
+                  ElevatedButton(onPressed: () async {
                     await _controller?.openStylePanel();
                   }, child: Text('open style panel')),
                   ElevatedButton(onPressed: () async {
@@ -236,10 +240,10 @@ class _ViewerState extends State<Viewer> {
         print("flutter annotation action: ${toolMode}");
         if (toolMode == Tools.pan) {
           print("改变");
-          print("重新设置为自由文本");
-          controller.setToolMode(Tools.annotationCreateFreeText);
-          final toolMode = await controller.getToolMode();
-          print("重新设置为自由文本成功: ${toolMode}");
+          // print("重新设置为自由文本");
+          // controller.setToolMode(Tools.annotationCreateFreeText);
+          // final toolMode = await controller.getToolMode();
+          // print("重新设置为自由文本成功: ${toolMode}");
       }});
 
       print("flutter annotation action: ${action}");
